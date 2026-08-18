@@ -816,7 +816,7 @@ with tab_quiz:
                 st.info(q.get("explication", ""))
                 st.session_state.questions_done += 1
                 st.session_state.quiz_question = None
-                st.session_state.quiz_answer = None
+        
 
         if st.button("Nouvelle question", key="reset_quiz"):
             st.session_state.quiz_question = None
@@ -830,6 +830,6 @@ with tab_quiz:
 
 st.markdown(
     '<div class="footer">FRANTSAY 🇲🇬 · Apprendre le français avec confiance · '
-    "Conçu pour les apprenants à Madagascar</div>",
+    "Conçu par RAKOTONIRINA Avosoa</div>",
     unsafe_allow_html=True,
 )
