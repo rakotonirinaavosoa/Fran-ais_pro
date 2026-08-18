@@ -933,11 +933,8 @@ with tab_quiz:
             st.rerun()
 
 
-# =============================================================================
 # FOOTER
-# =============================================================================
-
 st.markdown(
-    '<div class="footer">FRANTSAY: Apprendre le français avec confiance . Conçu par RAKOTONIRINA Avosoa</div>',
+    '<div class="footer">FRANTSAY 🇲🇬 Apprendre le français avec confiance . Conçu par RAKOTONIRINA Avosoa</div>',
     unsafe_allow_html=True,
 )
