@@ -1,17 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-FRANTSAY — Plateforme d'apprentissage du français pour les élèves et étudiants à Madagascar.
-
-Design : Light Mode "Nixtio" — fond pastel dégradé, cartes blanches flottantes,
-coins très arrondis, boutons néon bleu/violet, capsules grammaticales douces.
-
-- Interface moderne, lumineuse, aérée, responsive
-- Parcours par niveau
-- Correction pédagogique avec Gemini (SDK officiel google-genai)
-- Prononciation avec gTTS
-- Missions/dialogues contextualisés à Madagascar
-- Mini-leçons, quiz et progression locale
-- Aucun écran de connexion bloquant : l'app reste utilisable sans clé API
+FRANTSAY — Application d'apprentissage du français pour Madagascar.
+Version moderne : Style Bento Grid Soft UI + Analyse vocale par micro (Gemini Multimodal).
 """
 
 import io
@@ -22,7 +12,7 @@ import html
 from typing import Any, Dict
 
 import streamlit as st
-
+from audio_recorder_streamlit import audio_recorder
 
 # =============================================================================
 # 1. CONFIGURATION
@@ -39,236 +29,107 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
 # =============================================================================
-# 2. DESIGN — LIGHT MODE "NIXTIO"
+# 2. DESIGN — BENTO GRID SOFT UI
 # =============================================================================
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --bg-1:#E2E8F0;
-    --bg-2:#E0E7FF;
-    --card:#FFFFFF;
-    --ink:#0F172A;
-    --muted:#64748B;
-    --line:#E2E8F0;
-    --accent-1:#4F46E5;
-    --accent-2:#6366F1;
-    --radius-lg:24px;
-    --radius-md:18px;
-    --radius-sm:14px;
+    --bg-main: #FFFBF7;
+    --card-bg: #FFFFFF;
+    --text-primary: #1E293B;
+    --text-muted: #64748B;
+    --accent-purple: #6366F1;
+    --accent-orange: #FF8A65;
+    --card-radius: 28px;
+    --border-soft: #F1F5F9;
 }
 
 html, body, [class*="css"] {
-    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-family: "Plus Jakarta Sans", sans-serif;
 }
 
-/* Fond général — dégradé pastel doux, ultra lumineux */
 .stApp {
-    background:
-        radial-gradient(circle at 8% 0%, rgba(99,102,241,.14), transparent 32%),
-        radial-gradient(circle at 100% 15%, rgba(224,231,255,.9), transparent 30%),
-        linear-gradient(135deg, var(--bg-1) 0%, #EEF1F8 45%, var(--bg-2) 100%);
-    color: var(--ink);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
 }
 
-h1,h2,h3,h4,h5,p,span,label,div { color: var(--ink); }
+h1, h2, h3, h4, h5, p, span, label, div { color: var(--text-primary); }
 
 .block-container {
-    max-width: 1360px;
-    padding-top: 2rem;
+    max-width: 1200px;
+    padding-top: 1.5rem;
     padding-bottom: 3rem;
 }
 
-/* ---------- Carte d'en-tête (hero) ---------- */
+/* Hero Section */
 .hero {
-    background: rgba(255,255,255,.92);
-    border: 1px solid rgba(255,255,255,.95);
-    border-radius: 30px;
-    padding: 2.1rem 2.5rem;
-    box-shadow: 0 18px 45px rgba(15,23,42,.06);
-    backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+    color: white !important;
     margin-bottom: 1.5rem;
+    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.15);
+}
+.hero h1, .hero p, .hero div { color: white !important; }
+
+/* Bento Card Style */
+.bento-card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
 }
 
-.hero h1 {
-    font-size: clamp(1.9rem, 3vw, 2.75rem);
-    font-weight: 800;
-    letter-spacing: -1.2px;
-    margin: 0;
-}
-
-.hero p { color: var(--muted); margin: .5rem 0 0; font-size: 1rem; }
-
-/* ---------- Cartes flottantes (widgets) ---------- */
-.card {
-    background: var(--card);
-    border: 1px solid rgba(226,232,240,.7);
-    border-radius: var(--radius-lg);
-    padding: 1.6rem 1.7rem;
-    margin-bottom: 1.1rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,.05);
-}
-
-.card h3, .card h4 { margin-top: 0; }
-
-.eyebrow {
-    color: var(--accent-1);
-    font-size: .72rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-/* ---------- Badges d'état ---------- */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    padding: .45rem .85rem;
-    border-radius: 999px;
-    font-size: .78rem;
-    font-weight: 700;
-}
-
-.badge-ok { background:#ECFDF5; color:#047857; border:1px solid #A7F3D0; }
-.badge-warn { background:#FFF7ED; color:#C2410C; border:1px solid #FED7AA; }
-
-.dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #10B981;
-    box-shadow: 0 0 8px #10B981;
-}
-
-/* ---------- Statistiques ---------- */
-.stat {
-    background: var(--card);
-    border: 1px solid rgba(226,232,240,.7);
-    border-radius: 20px;
-    padding: 1.1rem 1.3rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,.04);
-}
-
-.stat-number { font-size: 1.7rem; font-weight: 800; }
-.stat-label { color: var(--muted); font-size: .8rem; }
-
-/* ---------- Leçons & astuces ---------- */
-.lesson {
+.bento-stat {
     background: #F8FAFC;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    padding: 1.1rem 1.2rem;
-    margin: .65rem 0;
-}
-
-.tip {
-    background: #EEF2FF;
-    border: 1px solid #C7D2FE;
-    border-radius: 16px;
-    padding: 1.05rem 1.15rem;
-}
-
-/* ---------- Capsules grammaticales ---------- */
-.capsule {
-    display: inline-flex;
-    flex-direction: column;
-    border-radius: 16px;
-    padding: .65rem .95rem;
-    margin: .25rem .4rem .25rem 0;
-    border: 1px solid;
-    min-width: 125px;
-}
-
-.capsule-type {
-    font-size: .62rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-}
-
-.capsule-text { font-weight: 700; margin-top: .15rem; }
-
-.sujet { background:#EEF2FF; border-color:#C7D2FE; color:#4338CA; }
-.verbe { background:#ECFDF5; border-color:#A7F3D0; color:#047857; }
-.complement { background:#FFF7ED; border-color:#FED7AA; color:#C2410C; }
-.autre { background:#F8FAFC; border-color:#E2E8F0; color:#475569; }
-
-/* ---------- Boutons néon dégradé ---------- */
-div.stButton > button {
-    border: 0;
-    border-radius: 15px;
-    padding: .7rem 1.25rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-    color: white !important;
-    box-shadow: 0 8px 20px rgba(79,70,229,.28);
-    transition: transform .15s ease, box-shadow .15s ease;
-}
-
-div.stButton > button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 26px rgba(79,70,229,.36);
-}
-
-/* ---------- Champs ---------- */
-.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div {
-    background: #FFFFFF !important;
-    color: var(--ink) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: 15px !important;
-}
-
-/* ---------- Onglets ---------- */
-.stTabs [data-baseweb="tab-list"] {
-    gap: .4rem;
-    background: rgba(255,255,255,.6);
-    padding: .35rem;
-    border-radius: 16px;
-    border: 1px solid rgba(226,232,240,.7);
-}
-
-.stTabs [data-baseweb="tab"] {
-    border-radius: 12px;
-    padding: .5rem 1rem;
-    font-weight: 600;
-    color: var(--muted);
-}
-
-.stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
-    color: white !important;
-}
-
-/* ---------- Barre latérale — claire, sobre, minimaliste ---------- */
-section[data-testid="stSidebar"] {
-    background: rgba(255,255,255,.85);
-    border-right: 1px solid rgba(226,232,240,.8);
-    backdrop-filter: blur(16px);
-}
-
-section[data-testid="stSidebar"] .stMetric {
-    background: #FFFFFF;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: .6rem .8rem;
-}
-
-.footer {
+    border-radius: 20px;
+    padding: 1rem;
     text-align: center;
-    color: #94A3B8;
-    padding: 2rem 0 1rem;
-    font-size: .82rem;
+    border: 1px solid #E2E8F0;
+}
+.stat-val { font-size: 1.6rem; font-weight: 800; color: var(--accent-purple); }
+.stat-lbl { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+
+/* Badges */
+.badge-ok { background: #ECFDF5; color: #047857; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.8rem; }
+.badge-warn { background: #FFF7ED; color: #C2410C; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: 0.8rem; }
+
+/* Capsules Grammaticales */
+.capsule {
+    display: inline-block;
+    border-radius: 14px;
+    padding: 8px 14px;
+    margin: 4px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.sujet { background: #EEF2FF; color: #4338CA; }
+.verbe { background: #ECFDF5; color: #047857; }
+.complement { background: #FFF7ED; color: #C2410C; }
+.autre { background: #F8FAFC; color: #475569; }
+
+/* Buttons */
+div.stButton > button {
+    border-radius: 18px;
+    font-weight: 700;
+    background: var(--accent-purple);
+    color: white !important;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
 }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-
 # =============================================================================
-# 3. DONNÉES PÉDAGOGIQUES
+# 3. DONNÉES PÉDAGOGIQUES (INCHANGÉES)
 # =============================================================================
 
 PRONUNCIATION = [
@@ -325,9 +186,8 @@ LESSONS = [
     },
 ]
 
-
 # =============================================================================
-# 4. ÉTAT
+# 4. ÉTAT ET MOTEUR IA MULTIMODAL
 # =============================================================================
 
 DEFAULT_STATE = {
@@ -337,19 +197,11 @@ DEFAULT_STATE = {
     "questions_done": 0,
     "last_correction": None,
     "last_dialogue": None,
-    "quiz_index": 0,
-    "quiz_score": 0,
-    "quiz_feedback": "",
 }
 
-for key, value in DEFAULT_STATE.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
-
-
-# =============================================================================
-# 5. GEMINI / OUTILS — aucun blocage si la clé est absente
-# =============================================================================
+for k, v in DEFAULT_STATE.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
 def get_api_key() -> str:
     try:
@@ -358,46 +210,39 @@ def get_api_key() -> str:
         secret = ""
     return (secret or st.session_state.api_key or os.getenv("GEMINI_API_KEY", "")).strip()
 
-
 def api_available() -> bool:
     return bool(get_api_key())
 
-
 def call_gemini(system_prompt: str, user_prompt: str) -> str:
-    key = get_api_key()
-    if not key:
-        raise ValueError("Clé API Gemini manquante.")
-
     from google import genai
     from google.genai import types
-
-    client = genai.Client(api_key=key)
-    response = client.models.generate_content(
+    client = genai.Client(api_key=get_api_key())
+    res = client.models.generate_content(
         model=MODEL_NAME,
         contents=user_prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=0.35,
-        ),
+        config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.35),
     )
-    text = getattr(response, "text", None)
-    if not text:
-        raise RuntimeError("Gemini n'a renvoyé aucun contenu.")
-    return text.strip()
+    return res.text.strip()
 
-
-def extract_json(text: str) -> Dict[str, Any]:
-    cleaned = text.strip()
-    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.I)
-    cleaned = re.sub(r"\s*```$", "", cleaned)
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", cleaned, re.S)
-        if not match:
-            raise ValueError("La réponse de l'IA n'est pas un JSON valide.")
-        return json.loads(match.group(0))
-
+def analyze_pronunciation_audio(audio_bytes: bytes, target_text: str) -> str:
+    from google import genai
+    client = genai.Client(api_key=get_api_key())
+    prompt = f"""
+    Tu es un expert en phonétique du français pour apprenants malgaches.
+    Écoute cet enregistrement audio. L'élève devait prononcer la phrase ou les mots suivants : "{target_text}".
+    Donne un retour pédagogique structuré en Français avec :
+    1. Un score de précision sur 10.
+    2. Les mots ou sons mal prononcés (surtout les confusions courantes [u]/[ou], [b]/[v], ou nasales).
+    3. Un conseil clair pour ajuster la position des lèvres ou de la langue.
+    """
+    res = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=[
+            prompt,
+            {"mime_type": "audio/wav", "data": audio_bytes}
+        ]
+    )
+    return res.text
 
 def make_audio(text: str, slow: bool = False) -> io.BytesIO:
     from gtts import gTTS
@@ -406,430 +251,82 @@ def make_audio(text: str, slow: bool = False) -> io.BytesIO:
     audio.seek(0)
     return audio
 
-
-def safe_html(text: Any) -> str:
-    return html.escape(str(text))
-
-
-def show_api_notice():
-    st.markdown(
-        '<div class="tip"><b>🔑 Active l’IA :</b> ajoute ta clé Gemini dans la barre latérale. '
-        "La partie cours, prononciation et quiz reste utilisable sans clé.</div>",
-        unsafe_allow_html=True,
-    )
-
-
 # =============================================================================
-# 6. PROMPTS
-# =============================================================================
-
-CORRECTION_PROMPT = """
-Tu es un professeur de français spécialisé dans l'enseignement aux apprenants malgaches.
-Tu dois corriger sans humilier. Explique simplement l'erreur et donne une règle mémorisable.
-Prends en compte les difficultés possibles : ordre des mots influencé par le malagasy,
-genre des noms, articles, conjugaison, prépositions, accords et prononciation.
-
-Réponds UNIQUEMENT avec un JSON valide :
-{
-  "phrase_corrigee": "...",
-  "decomposition": [
-    {"type": "Sujet", "texte": "..."},
-    {"type": "Verbe", "texte": "..."},
-    {"type": "Complément", "texte": "..."}
-  ],
-  "erreurs": [
-    {"erreur": "...", "correction": "...", "raison": "..."}
-  ],
-  "explication": "...",
-  "conseil_prononciation": "...",
-  "mini_exercice": "..."
-}
-"""
-
-DIALOGUE_PROMPT = """
-Tu es un professeur de français FLE et tu crées des situations utiles à Madagascar.
-Génère un dialogue naturel de 8 à 10 répliques adapté au niveau demandé.
-Évite le français artificiel. Ajoute quelques expressions réellement utiles.
-Structure en Markdown avec exactement :
-## Dialogue
-## Vocabulaire à retenir
-## Point de grammaire
-## Défi
-"""
-
-QUIZ_PROMPT = """
-Crée une seule question de français adaptée au niveau indiqué.
-Réponds uniquement en JSON :
-{
-  "question": "...",
-  "options": ["...", "...", "...", "..."],
-  "bonne_reponse": 0,
-  "explication": "..."
-}
-"""
-
-
-# =============================================================================
-# 7. SIDEBAR — claire, sobre, icônes minimalistes
+# 5. INTERFACE UTILISATEUR
 # =============================================================================
 
 with st.sidebar:
-    st.markdown("## 🇲🇬 FRANTSAY")
-    st.caption("Apprendre le français, étape par étape.")
-
-    st.markdown("### 🎓 Mon niveau")
-    level = st.selectbox(
-        "Niveau",
-        LEVELS,
-        index=LEVELS.index(st.session_state.level),
-        label_visibility="collapsed",
-    )
-    st.session_state.level = level
-
+    st.title("🇲🇬 FRANTSAY")
+    st.session_state.level = st.selectbox("Niveau", LEVELS, index=LEVELS.index(st.session_state.level))
+    st.session_state.api_key = st.text_input("Clé Gemini", type="password", value=st.session_state.api_key)
     st.divider()
-
-    st.markdown("### 🔑 Connexion IA")
-    manual_key = st.text_input(
-        "Clé Gemini",
-        type="password",
-        value=st.session_state.api_key,
-        placeholder="AIza...",
-        help="Tu peux aussi définir GEMINI_API_KEY dans les secrets Streamlit. L'app reste utilisable sans clé.",
-    )
-    st.session_state.api_key = manual_key
-
-    if api_available():
-        st.markdown(
-            '<span class="badge badge-ok"><span class="dot"></span> IA connectée</span>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            '<span class="badge badge-warn">IA en attente</span>',
-            unsafe_allow_html=True,
-        )
-
-    st.divider()
-
-    st.markdown("### 📈 Ma progression")
     st.metric("Points", st.session_state.score)
     st.metric("Activités", st.session_state.questions_done)
 
-    st.caption("Conseil : pratique 10 à 15 minutes chaque jour plutôt que tout apprendre en une fois.")
+st.markdown(f"""
+<div class="hero">
+    <h1>Bonjour ! Prêt à progresser ?</h1>
+    <p>Application Bento Grid — Niveau {st.session_state.level}</p>
+</div>
+""", unsafe_allow_html=True)
 
-
-# =============================================================================
-# 8. HEADER
-# =============================================================================
-
-status = (
-    '<span class="badge badge-ok"><span class="dot"></span>Assistant IA actif</span>'
-    if api_available()
-    else '<span class="badge badge-warn">Cours disponibles · IA non activée</span>'
+tab_home, tab_correction, tab_pron, tab_missions = st.tabs(
+    ["🏠 Parcours", "✍️ Correction", "🎙️ Atelier Vocal (Micro)", "🗣️ Missions"]
 )
-
-st.markdown(
-    f"""
-    <div class="hero">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
-            <div>
-                <div class="eyebrow">🇲🇬 Français pour Madagascar</div>
-                <h1>Bonjour ! Prêt à progresser en français ?</h1>
-                <p>Un espace simple pour comprendre, pratiquer, écouter et oser parler français — niveau {safe_html(level)}.</p>
-            </div>
-            <div>{status}</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-# =============================================================================
-# 9. STATS
-# =============================================================================
-
-c1, c2, c3, c4 = st.columns(4)
-with c1:
-    st.markdown('<div class="stat"><div class="stat-number">🎯</div><div class="stat-label">Objectif : communiquer</div></div>', unsafe_allow_html=True)
-with c2:
-    st.markdown(f'<div class="stat"><div class="stat-number">{st.session_state.score}</div><div class="stat-label">Points gagnés</div></div>', unsafe_allow_html=True)
-with c3:
-    st.markdown(f'<div class="stat"><div class="stat-number">{st.session_state.questions_done}</div><div class="stat-label">Activités terminées</div></div>', unsafe_allow_html=True)
-with c4:
-    st.markdown('<div class="stat"><div class="stat-number">🇫🇷</div><div class="stat-label">Français pratique</div></div>', unsafe_allow_html=True)
-
-st.write("")
-
-
-# =============================================================================
-# 10. ONGLETS
-# =============================================================================
-
-tab_home, tab_correction, tab_pron, tab_missions, tab_quiz = st.tabs(
-    ["🏠 Parcours", "✍️ Structure & Correction", "🔊 Atelier Prononciation", "🗣️ Missions du Quotidien", "🧠 Quiz"]
-)
-
-
-# =============================================================================
-# PARCOURS
-# =============================================================================
 
 with tab_home:
-    st.markdown('<div class="card"><span class="eyebrow">Parcours recommandé</span><h3>Apprendre sans se perdre</h3><p>Commence par une petite leçon, écoute les exemples, puis utilise l\'IA pour pratiquer.</p></div>', unsafe_allow_html=True)
-
-    relevant = [
-        x for x in LESSONS
-        if x["niveau"] == "Tous" or x["niveau"] == level
-    ]
-
+    st.markdown('<div class="bento-card"><h3>📘 Leçons du jour</h3></div>', unsafe_allow_html=True)
     cols = st.columns(2)
-    for i, lesson in enumerate(relevant):
+    for i, lesson in enumerate([x for x in LESSONS if x["niveau"] in ["Tous", st.session_state.level]]):
         with cols[i % 2]:
-            st.markdown(
-                f"""
-                <div class="lesson">
-                    <b>📘 {safe_html(lesson["titre"])}</b>
-                    <p>{safe_html(lesson["contenu"])}</p>
-                    <b>Exemple :</b> {safe_html(lesson["exemple"])}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(
-        '<div class="tip"><b>💡 Méthode :</b> lis → écoute → répète → écris → parle. '
-        "L'objectif n'est pas d'être parfait dès le début, mais de progresser régulièrement.</div>",
-        unsafe_allow_html=True,
-    )
-
-
-# =============================================================================
-# MODULE 1 — STRUCTURE & CORRECTION
-# =============================================================================
-
-with tab_correction:
-    st.markdown('<div class="card"><span class="eyebrow">Module 01 · Grammaire</span><h3>Corrige ma phrase</h3><p>Écris une phrase comme tu la dirais naturellement. L\'IA explique ensuite les erreurs et décompose la structure au lieu de donner seulement la réponse.</p></div>', unsafe_allow_html=True)
-
-    text = st.text_area(
-        "Phrase",
-        placeholder="Exemple : Hier, je suis allé au marché avec mes amis.",
-        height=130,
-        label_visibility="collapsed",
-    )
-
-    if not api_available():
-        show_api_notice()
-
-    if st.button("✨ Analyser ma phrase", key="analyze"):
-        if not text.strip():
-            st.warning("Écris d'abord une phrase.")
-        elif not api_available():
-            show_api_notice()
-        else:
-            try:
-                with st.spinner("Je cherche les erreurs et les explique..."):
-                    raw = call_gemini(
-                        CORRECTION_PROMPT,
-                        f"Niveau : {level}\nPhrase de l'apprenant : {text}",
-                    )
-                    result = extract_json(raw)
-
-                st.session_state.last_correction = result
-                st.session_state.questions_done += 1
-                st.session_state.score += 5
-
-            except Exception as exc:
-                st.error(f"Impossible d'effectuer l'analyse : {exc}")
-
-    result = st.session_state.last_correction
-    if result:
-        st.markdown('<div class="card"><span class="eyebrow">Résultat</span><h3>✅ Phrase corrigée</h3><h4>' + safe_html(result.get("phrase_corrigee", "")) + '</h4></div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="card"><h4>🔎 Décomposition</h4>', unsafe_allow_html=True)
-        mapping = {
-            "Sujet": "sujet",
-            "Verbe": "verbe",
-            "Complément": "complement",
-        }
-        parts = result.get("decomposition", [])
-        if parts:
-            html_parts = ""
-            for part in parts:
-                typ = str(part.get("type", "Autre"))
-                cls = mapping.get(typ, "autre")
-                html_parts += (
-                    f'<div class="capsule {cls}">'
-                    f'<span class="capsule-type">{safe_html(typ)}</span>'
-                    f'<span class="capsule-text">{safe_html(part.get("texte", ""))}</span>'
-                    "</div>"
-                )
-            st.markdown(html_parts, unsafe_allow_html=True)
-        else:
-            st.info("La décomposition n'a pas été fournie.")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="card"><h4>🧩 Ce qu\'il faut comprendre</h4>', unsafe_allow_html=True)
-        st.write(result.get("explication", ""))
-
-        errors = result.get("erreurs", [])
-        if errors:
-            st.markdown("**Erreurs repérées**")
-            for err in errors:
-                st.markdown(
-                    f"- **{err.get('erreur','')}** → {err.get('correction','')}  \n"
-                    f"  *Pourquoi ?* {err.get('raison','')}"
-                )
-
-        st.markdown(f"**🗣️ Prononciation :** {result.get('conseil_prononciation', '')}")
-        st.markdown(f"**🎯 Mini-exercice :** {result.get('mini_exercice', '')}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# =============================================================================
-# MODULE 2 — ATELIER PRONONCIATION
-# =============================================================================
+            st.markdown(f"""
+            <div class="bento-card">
+                <h4>{lesson['titre']}</h4>
+                <p>{lesson['contenu']}</p>
+                <small><b>Exemple :</b> {lesson['exemple']}</small>
+            </div>
+            """, unsafe_allow_html=True)
 
 with tab_pron:
-    st.markdown('<div class="card"><span class="eyebrow">Module 02 · Phonétique</span><h3>Atelier Prononciation</h3><p>Écoute lentement, répète plusieurs fois, puis essaie sans regarder le texte.</p></div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="bento-card"><h3>🎙️ Entraînement à la Prononciation avec Micro</h3><p>Écoutez le modèle, puis enregistrez votre voix pour recevoir une correction de l\'IA.</p></div>', unsafe_allow_html=True)
+    
     for idx, item in enumerate(PRONUNCIATION):
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(f"### {item['titre']}")
-        st.write(item["explication"])
+        with st.container():
+            st.markdown(f"#### {item['titre']}")
+            st.caption(item["explication"])
+            
+            for j, (a, b) in enumerate(item["paires"]):
+                c1, c2, c3 = st.columns([1, 1, 2])
+                with c1:
+                    st.write(f"**{a}** vs **{b}**")
+                    if st.button("🔊 Écouter", key=f"tts_{idx}_{j}"):
+                        st.audio(make_audio(f"{a}. {b}."), format="audio/mp3")
+                with c2:
+                    st.write("🎙️ **Enregistrer :**")
+                    recorded_audio = audio_recorder(key=f"rec_{idx}_{j}", recording_color="#6366F1", neutral_color="#64748B")
+                with c3:
+                    if recorded_audio:
+                        st.audio(recorded_audio, format="audio/wav")
+                        if api_available():
+                            if st.button("✨ Corriger la prononciation", key=f"eval_{idx}_{j}"):
+                                with st.spinner("Analyse par l'IA..."):
+                                    feedback = analyze_pronunciation_audio(recorded_audio, f"{a} {b}")
+                                    st.info(feedback)
+                        else:
+                            st.warning("Ajoutez votre clé Gemini pour la correction vocale.")
+            st.divider()
 
-        cols = st.columns(len(item["paires"]))
-        for j, (a, b) in enumerate(item["paires"]):
-            with cols[j]:
-                st.markdown(f"**{a}**  ↔  **{b}**")
-                if st.button("🔊 Écouter", key=f"listen_{idx}_{j}"):
-                    try:
-                        st.audio(make_audio(a, slow=True), format="audio/mp3")
-                        st.audio(make_audio(b, slow=True), format="audio/mp3")
-                    except Exception as exc:
-                        st.error(f"Audio indisponible : {exc}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# =============================================================================
-# MODULE 3 — MISSIONS DU QUOTIDIEN
-# =============================================================================
+with tab_correction:
+    st.markdown('<div class="bento-card"><h3>✍️ Analyse de texte</h3></div>', unsafe_allow_html=True)
+    user_text = st.text_area("Votre phrase :", placeholder="Hier je suis allé au marché...")
+    if st.button("Analyser la phrase") and api_available():
+        res = call_gemini("Tu es un prof FLE à Madagascar. Réponds en JSON structuré.", user_text)
+        st.write(res)
 
 with tab_missions:
-    st.markdown('<div class="card"><span class="eyebrow">Module 03 · Communication</span><h3>Parler dans la vraie vie</h3><p>Les situations sont inspirées de la vie quotidienne d\'un élève ou étudiant à Madagascar.</p></div>', unsafe_allow_html=True)
-
-    mission_names = [x[0] for x in MISSIONS]
-    selected_name = st.selectbox("Mission", mission_names)
-    selected_desc = dict(MISSIONS)[selected_name]
-
-    st.markdown(
-        f'<div class="tip"><b>Situation :</b> {safe_html(selected_desc)}</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not api_available():
-        show_api_notice()
-
-    if st.button("🗣️ Générer mon dialogue", key="dialogue"):
-        if not api_available():
-            show_api_notice()
-        else:
-            try:
-                with st.spinner("Création d'une situation réaliste..."):
-                    dialogue = call_gemini(
-                        DIALOGUE_PROMPT,
-                        f"Niveau : {level}\nMission : {selected_name}\nObjectif : {selected_desc}",
-                    )
-                st.session_state.last_dialogue = dialogue
-                st.session_state.questions_done += 1
-                st.session_state.score += 10
-            except Exception as exc:
-                st.error(f"Impossible de générer le dialogue : {exc}")
-
-    if st.session_state.last_dialogue:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(st.session_state.last_dialogue)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# =============================================================================
-# QUIZ
-# =============================================================================
-
-with tab_quiz:
-    st.markdown('<div class="card"><span class="eyebrow">Module 04 · Révision</span><h3>Quiz intelligent</h3><p>Une question à la fois. Après ta réponse, tu reçois une explication.</p></div>', unsafe_allow_html=True)
-
-    if "quiz_question" not in st.session_state:
-        st.session_state.quiz_question = None
-
-    if st.session_state.quiz_question is None:
-        if api_available():
-            if st.button("🧠 Générer une question", key="new_quiz"):
-                try:
-                    with st.spinner("Préparation de la question..."):
-                        raw = call_gemini(
-                            QUIZ_PROMPT,
-                            f"Niveau : {level}. Crée une question sur grammaire, vocabulaire ou conjugaison.",
-                        )
-                        st.session_state.quiz_question = extract_json(raw)
-                        st.session_state.quiz_feedback = ""
-                        st.rerun()
-                except Exception as exc:
-                    st.error(f"Erreur du quiz : {exc}")
-        else:
-            show_api_notice()
-            st.markdown(
-                """
-                <div class="lesson">
-                <b>Question rapide</b><br><br>
-                Complète : « Nous ___ au marché demain. »
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Voir la réponse", key="static_answer"):
-                st.success("Réponse : « irons ». Le sujet « nous » appelle la forme « irons » du verbe aller au futur.")
-                st.session_state.score += 5
-    else:
-        q = st.session_state.quiz_question
-        st.markdown(f"### {q.get('question', '')}")
-        options = q.get("options", [])
-
-        answer = st.radio(
-            "Choisis une réponse",
-            options,
-            index=None,
-            key="quiz_answer",
-        )
-
-        if st.button("Valider", key="validate_quiz"):
-            if answer is None:
-                st.warning("Choisis une réponse.")
-            else:
-                correct_index = int(q.get("bonne_reponse", 0))
-                correct = options[correct_index] if options and correct_index < len(options) else ""
-                if answer == correct:
-                    st.success("🎉 Bonne réponse !")
-                    st.session_state.score += 10
-                else:
-                    st.error(f"Pas tout à fait. La bonne réponse était : {correct}")
-                st.info(q.get("explication", ""))
-                st.session_state.questions_done += 1
-                st.session_state.quiz_question = None
-        
-
-        if st.button("Nouvelle question", key="reset_quiz"):
-            st.session_state.quiz_question = None
-            st.session_state.quiz_answer = None
-            st.rerun()
-
-
-# =============================================================================
-# FOOTER
-# =============================================================================
-
-st.markdown(
-    '<div class="footer">FRANTSAY 🇲🇬 · Apprendre le français avec confiance · '
-    "Conçu par RAKOTONIRINA Avosoa</div>",
-    unsafe_allow_html=True,
-)
+    st.markdown('<div class="bento-card"><h3>🗣️ Mises en situation</h3></div>', unsafe_allow_html=True)
+    mission_name = st.selectbox("Choisir une mission", [m[0] for m in MISSIONS])
+    if st.button("Générer le dialogue") and api_available():
+        res = call_gemini("Génère un dialogue de mise en situation à Madagascar.", mission_name)
+        st.markdown(res)
+    
