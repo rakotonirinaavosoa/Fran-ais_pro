@@ -293,15 +293,15 @@ def call_gemini(system_prompt: str, user_prompt: str) -> str:
         raise ValueError("Clé API Gemini manquante.")
     
     from google import genai
-    from google.genai import types
+    
     client = genai.Client(api_key=key)
     response = client.models.generate_content(
         model=MODEL_NAME,
         contents=user_prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=0.35,
-        ),
+        config={
+            "system_instruction": system_prompt,
+            "temperature": 0.35,
+        },
     )
     text = getattr(response, "text", None)
     if not text:
@@ -582,32 +582,31 @@ with tab_audio:
 
     if audio_bytes:
         st.audio(audio_bytes, format="audio/wav")
+
+    if st.button("🔬 Analyser ma prononciation", key="analyze_audio"):
+    if not api_available():
+        show_api_notice()
+    else:
+        try:
+            with st.spinner("Évaluation phonétique par Gemini..."):
+                from google import genai
+                client = genai.Client(api_key=get_api_key())
+                
+                response = client.models.generate_content(
+                    model=MODEL_NAME,
+                    contents=[
+                        "Analyse la prononciation de cet enregistrement vocal. Réponds uniquement en JSON avec score, points forts, points à améliorer et conseil.",
+                        genai.upload_file(io.BytesIO(audio_bytes), mime_type="audio/wav")
+                    ],
+                )
+                result = extract_json(response.text)
+                
+                st.session_state.last_audio_analysis = result
+                st.session_state.questions_done += 1
+                st.session_state.score += 10
+        except Exception as exc:
+            st.error(f"Erreur d'analyse audio : {exc}")
         
-        if st.button("🔬 Analyser ma prononciation", key="analyze_audio"):
-            if not api_available():
-                show_api_notice()
-            else:
-                try:
-                    with st.spinner("Évaluation phonétique par Gemini..."):
-                        # Important : Gemini accepte les bytes audio directement via l'API "files"
-       from google import genai
-                        client = genai.Client(api_key=get_api_key())
-                        
-                        # Upload du fichier audio en mémoire
-                        response = client.models.generate_content(
-                            model=MODEL_NAME,
-                            contents=[
-                                "Analyse la prononciation de cet enregistrement vocal. Réponds uniquement en JSON avec score, points forts, points à améliorer et conseil.",
-                                genai.upload_file(io.BytesIO(audio_bytes), mime_type="audio/wav")
-                            ],
-                        )
-                        result = extract_json(response.text)
-                        
-                        st.session_state.last_audio_analysis = result
-                        st.session_state.questions_done += 1
-                        st.session_state.score += 10
-                except Exception as exc:
-                    st.error(f"Erreur d'analyse audio : {exc}")
    # Affichage du résultat vocal
     if st.session_state.last_audio_analysis:
         analysis = st.session_state.last_audio_analysis
