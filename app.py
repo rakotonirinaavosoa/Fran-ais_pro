@@ -497,8 +497,8 @@ Structure en Markdown avec exactement :
 
 QUIZ_PROMPT = """
 
-PRONUNCIATION_PROMPT = """
-Évalue la prononciation française de l'apprenant à partir de l'audio fourni.
+PRONUNCIATION_PROMPT = (
+    "Évalue la prononciation française de l'apprenant à partir de l'audio fourni.\n"
 Réponds UNIQUEMENT avec un JSON valide :
 {
   "score": 0,
