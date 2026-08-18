@@ -1,17 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 FRANTSAY — Plateforme d'apprentissage du français pour les élèves et étudiants à Madagascar.
-
-Design : Light Mode "Nixtio" — fond pastel dégradé, cartes blanches flottantes,
-coins très arrondis, boutons néon bleu/violet, capsules grammaticales douces.
-
-- Interface moderne, lumineuse, aérée, responsive
-- Parcours par niveau
-- Correction pédagogique avec Gemini (SDK officiel google-genai)
-- Prononciation avec gTTS
-- Missions/dialogues contextualisés à Madagascar
-- Mini-leçons, quiz et progression locale
-- Aucun écran de connexion bloquant : l'app reste utilisable sans clé API
+Design : Light Mode "Nixtio"
 """
 
 import io
@@ -23,7 +13,9 @@ from typing import Any, Dict
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
+from gtts import gTTS
 from google import genai
+from google.genai import types
 
 
 # =============================================================================
@@ -31,11 +23,11 @@ from google import genai
 # =============================================================================
 
 APP_NAME = "FRANTSAY"
-MODEL_NAME = "gemini-3.6-flash"
+MODEL_NAME = "gemini-2.5-flash"
 LEVELS = ["Collège", "Lycée", "Université"]
 
 st.set_page_config(
-    page_title="FRANTSAY — Faran'ny tsy hay?",
+    page_title="FRANTSAY — Apprendre le français",
     page_icon="🇲🇬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -381,6 +373,8 @@ DEFAULT_STATE = {
     "quiz_index": 0,
     "quiz_score": 0,
     "quiz_feedback": "",
+    "quiz_question": None,
+    "quiz_answer": None,
 }
 
 for key, value in DEFAULT_STATE.items():
@@ -389,7 +383,7 @@ for key, value in DEFAULT_STATE.items():
 
 
 # =============================================================================
-# 5. GEMINI / OUTILS — aucun blocage si la clé est absente
+# 5. GEMINI / OUTILS
 # =============================================================================
 
 def get_api_key() -> str:
@@ -438,7 +432,6 @@ def extract_json(text: str) -> Dict[str, Any]:
 
 
 def make_audio(text: str, slow: bool = False) -> io.BytesIO:
-    from gtts import gTTS
     audio = io.BytesIO()
     gTTS(text=text, lang="fr", slow=slow).write_to_fp(audio)
     audio.seek(0)
@@ -455,8 +448,6 @@ def show_api_notice():
         "La partie cours, prononciation et quiz reste utilisable sans clé.</div>",
         unsafe_allow_html=True,
     )
-
-
 # =============================================================================
 # 6. PROMPTS
 # =============================================================================
@@ -496,9 +487,18 @@ Structure en Markdown avec exactement :
 """
 
 QUIZ_PROMPT = """
+Crée une seule question de français adaptée au niveau indiqué.
+Réponds uniquement en JSON :
+{
+  "question": "...",
+  "options": ["...", "...", "...", "..."],
+  "bonne_reponse": 0,
+  "explication": "..."
+}
+"""
 
-PRONUNCIATION_PROMPT = (
-    "Évalue la prononciation française de l'apprenant à partir de l'audio fourni.\n"
+PRONUNCIATION_PROMPT = """
+Évalue la prononciation française de l'apprenant à partir de l'audio fourni.
 Réponds UNIQUEMENT avec un JSON valide :
 {
   "score": 0,
@@ -509,19 +509,9 @@ Réponds UNIQUEMENT avec un JSON valide :
 Le score est un nombre de 0 à 100.
 """
 
-"Crée une seule question de français adaptée au niveau indiqué."
-"Réponds uniquement en JSON":
-{
-  "question": "...",
-  "options": ["...", "...", "...", "..."],
-  "bonne_reponse": 0,
-  "explication": "..."
-}
-"""
-
 
 # =============================================================================
-# 7. SIDEBAR — claire, sobre, icônes minimalistes
+# 7. SIDEBAR
 # =============================================================================
 
 with st.sidebar:
@@ -584,9 +574,9 @@ st.markdown(
     <div class="hero">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
             <div>
-                <div class="eyebrow"> Cours de Français pour tous</div>
+                <div class="eyebrow">🇲🇬 Français pour Madagascar</div>
                 <h1>Bonjour ! Prêt à progresser en français ?</h1>
-                <p>Un espace simple pour comprendre, pratiquer, écouter et oser parler français {safe_html(level)}.</p>
+                <p>Un espace simple pour comprendre, pratiquer, écouter et oser parler français — niveau {safe_html(level)}.</p>
             </div>
             <div>{status}</div>
         </div>
@@ -640,7 +630,7 @@ with tab_home:
             st.markdown(
                 f"""
                 <div class="lesson">
-                    <b> {safe_html(lesson["titre"])}</b>
+                    <b>📘 {safe_html(lesson["titre"])}</b>
                     <p>{safe_html(lesson["contenu"])}</p>
                     <b>Exemple :</b> {safe_html(lesson["exemple"])}
                 </div>
@@ -649,7 +639,7 @@ with tab_home:
             )
 
     st.markdown(
-        '<div class="tip"><b> Méthode :</b> lis → écoute → répète → écris → parle. '
+        '<div class="tip"><b>💡 Méthode :</b> lis → écoute → répète → écris → parle. '
         "L'objectif n'est pas d'être parfait dès le début, mais de progresser régulièrement.</div>",
         unsafe_allow_html=True,
     )
@@ -767,14 +757,14 @@ with tab_pron:
         elif st.button("✨ Analyser ma prononciation", key="analyze_pronunciation"):
             try:
                 with st.spinner("Analyse de ta prononciation..."):
-                    audio_file = genai.upload_file(
-                        file=io.BytesIO(audio_bytes),
-                        config={"mime_type": "audio/wav"},
-                    )
                     client = genai.Client(api_key=get_api_key())
+                    
                     response = client.models.generate_content(
                         model=MODEL_NAME,
-                        contents=[audio_file, "Analyse cet enregistrement de prononciation française."],
+                        contents=[
+                            types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
+                            "Analyse cet enregistrement de prononciation française."
+                        ],
                         config={
                             "system_instruction": PRONUNCIATION_PROMPT,
                             "temperature": 0.2,
@@ -868,9 +858,6 @@ with tab_missions:
 with tab_quiz:
     st.markdown('<div class="card"><span class="eyebrow">Module 04 · Révision</span><h3>Quiz intelligent</h3><p>Une question à la fois. Après ta réponse, tu reçois une explication.</p></div>', unsafe_allow_html=True)
 
-    if "quiz_question" not in st.session_state:
-        st.session_state.quiz_question = None
-
     if st.session_state.quiz_question is None:
         if api_available():
             if st.button("🧠 Générer une question", key="new_quiz"):
@@ -891,9 +878,9 @@ with tab_quiz:
                 """
                 <div class="lesson">
                 <b>Question rapide</b><br><br>
-                Complète : Nous ..... au marché demain. 
+                Complète : « Nous ___ au marché demain. »
                 </div>
-             """ ,
+                """,
                 unsafe_allow_html=True,
             )
             if st.button("Voir la réponse", key="static_answer"):
@@ -933,8 +920,13 @@ with tab_quiz:
             st.rerun()
 
 
+# =============================================================================
 # FOOTER
+# =============================================================================
+
 st.markdown(
-    '<div class="footer">FRANTSAY 🇲🇬 Apprendre le français avec confiance . Conçu par RAKOTONIRINA Avosoa</div>',
+    '<div class="footer">FRANTSAY 🇲🇬 · Apprendre le français avec confiance · '
+    "Conçu par RAKOTONIRINA Avosoa</div>",
     unsafe_allow_html=True,
-)
+            )
+                     
