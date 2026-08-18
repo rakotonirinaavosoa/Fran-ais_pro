@@ -893,7 +893,7 @@ with tab_quiz:
                 <b>Question rapide</b><br><br>
                 Complète : Nous ..... au marché demain. 
                 </div>
-                """,
+             """ ,
                 unsafe_allow_html=True,
             )
             if st.button("Voir la réponse", key="static_answer"):
