@@ -891,7 +891,7 @@ with tab_quiz:
                 """
                 <div class="lesson">
                 <b>Question rapide</b><br><br>
-                Complète : « Nous ..... au marché demain. »
+                Complète : Nous ..... au marché demain. 
                 </div>
                 """,
                 unsafe_allow_html=True,
