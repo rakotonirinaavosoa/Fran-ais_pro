@@ -346,77 +346,45 @@ for key, value in DEFAULT_STATE.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
+# =====================================================================================
+# 5. GEMINI / OUTILS
+# =====================================================================================
 
-# =============================================================================
-# 5. GEMINI / OUTILS — aucun blocage si la clé est absente
-# =============================================================================
-
-def get_api_key() -> str:
+def obtenir_cle_api() -> str:
     try:
-        secret = st.secrets.get("GEMINI_API_KEY", "")
+        secrete = st.secrets.get("GEMINI_API_KEY", "")
     except Exception:
-        secret = ""
-    return (secret or st.session_state.api_key or os.getenv("GEMINI_API_KEY", "")).strip()
+        secrete = ""
+    if secrete:
+        return secrete
+    return st.session_state.get("cle_api_manuelle", "").strip()
 
+def api_disponible() -> bool:
+    return bool(obtenir_cle_api())
 
-def api_available() -> bool:
-    return bool(get_api_key())
-
-
-def call_gemini(system_prompt: str, user_prompt: str) -> str:
-    key = get_api_key()
-    if not key:
+def appel_gemini(system_prompt: str, user_prompt: str) -> str:
+    cle = obtenir_cle_api()
+    if not cle:
         raise ValueError("Clé API Gemini manquante.")
 
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=key)
-    response = client.models.generate_content(
-        model=MODEL_NAME,
+    client = genai.Client(api_key=cle)
+    reponse = client.models.generate_content(
+        model=NOM_MODELE_GEMINI,
         contents=user_prompt,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
             temperature=0.35,
         ),
     )
-    text = getattr(response, "text", None)
-    if not text:
-        raise RuntimeError("Gemini n'a renvoyé aucun contenu.")
-    return text.strip()
-
-
-def extract_json(text: str) -> Dict[str, Any]:
-    cleaned = text.strip()
-    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.I)
-    cleaned = re.sub(r"\s*```$", "", cleaned)
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", cleaned, re.S)
-        if not match:
-            raise ValueError("La réponse de l'IA n'est pas un JSON valide.")
-        return json.loads(match.group(0))
-
-
-def make_audio(text: str, slow: bool = False) -> io.BytesIO:
-    from gtts import gTTS
-    audio = io.BytesIO()
-    gTTS(text=text, lang="fr", slow=slow).write_to_fp(audio)
-    audio.seek(0)
-    return audio
-
-
-def safe_html(text: Any) -> str:
-    return html.escape(str(text))
-
-
-def show_api_notice():
-    st.markdown(
-        '<div class="tip"><b>🔑 Active l’IA :</b> ajoute ta clé Gemini dans la barre latérale. '
-        "La partie cours, prononciation et quiz reste utilisable sans clé.</div>",
-        unsafe_allow_html=True,
-    )
+    texte = getattr(reponse, "text", None)
+    if not texte:
+        raise RuntimeError("Gemini n'a renvoyé aucun texte.")
+    return texte.strip()
+    
+    
 
 
 # =============================================================================
