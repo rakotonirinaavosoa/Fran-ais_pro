@@ -586,7 +586,7 @@ st.markdown(
             <div>
                 <div class="eyebrow"> Cours de Français pour tous</div>
                 <h1>Bonjour ! Prêt à progresser en français ?</h1>
-                <p>Un espace simple pour comprendre, pratiquer, écouter et oser parler français — niveau {safe_html(level)}.</p>
+                <p>Un espace simple pour comprendre, pratiquer, écouter et oser parler français {safe_html(level)}.</p>
             </div>
             <div>{status}</div>
         </div>
