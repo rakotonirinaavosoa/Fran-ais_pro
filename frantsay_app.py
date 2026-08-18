@@ -29,7 +29,7 @@ import streamlit as st
 # =============================================================================
 
 APP_NAME = "FRANTSAY"
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-2.5-flash"  # ou "gemini-3.6-flash"
 LEVELS = ["Collège", "Lycée", "Université"]
 
 st.set_page_config(
