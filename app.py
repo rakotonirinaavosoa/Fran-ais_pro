@@ -509,7 +509,7 @@ Réponds UNIQUEMENT avec un JSON valide :
 Le score est un nombre de 0 à 100.
 """
 
-Crée une seule question de français adaptée au niveau indiqué.
+# Crée une seule question de français adaptée au niveau indiqué.
 Réponds uniquement en JSON :
 {
   "question": "...",
