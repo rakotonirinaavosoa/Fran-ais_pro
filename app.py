@@ -35,7 +35,7 @@ MODEL_NAME = "gemini-3.6-flash"
 LEVELS = ["Collège", "Lycée", "Université"]
 
 st.set_page_config(
-    page_title="FRANTSAY — Apprendre le français",
+    page_title="FRANTSAY — Faran'ny tsy hay?",
     page_icon="🇲🇬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -584,7 +584,7 @@ st.markdown(
     <div class="hero">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
             <div>
-                <div class="eyebrow">🇲🇬 Français pour Madagascar</div>
+                <div class="eyebrow"> Cours de Français pour tous</div>
                 <h1>Bonjour ! Prêt à progresser en français ?</h1>
                 <p>Un espace simple pour comprendre, pratiquer, écouter et oser parler français — niveau {safe_html(level)}.</p>
             </div>
