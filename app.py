@@ -640,7 +640,7 @@ with tab_home:
             st.markdown(
                 f"""
                 <div class="lesson">
-                    <b>📘 {safe_html(lesson["titre"])}</b>
+                    <b> {safe_html(lesson["titre"])}</b>
                     <p>{safe_html(lesson["contenu"])}</p>
                     <b>Exemple :</b> {safe_html(lesson["exemple"])}
                 </div>
@@ -649,7 +649,7 @@ with tab_home:
             )
 
     st.markdown(
-        '<div class="tip"><b>💡 Méthode :</b> lis → écoute → répète → écris → parle. '
+        '<div class="tip"><b> Méthode :</b> lis → écoute → répète → écris → parle. '
         "L'objectif n'est pas d'être parfait dès le début, mais de progresser régulièrement.</div>",
         unsafe_allow_html=True,
     )
