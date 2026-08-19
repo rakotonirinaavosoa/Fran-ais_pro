@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 # =============================================================================
 
 APP_NAME = "FRANTSAY"
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 LEVELS = ["Collège", "Lycée", "Université"]
 ROBOT_ILLUSTRATION = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f916.svg"
 
