@@ -772,7 +772,7 @@ status = (
 st.markdown(
     f"""
     <div class="hero">
-        <div class="eyebrow"><span class="tag tag-solid">MG</span> Français pour Madagascar</div>
+        <div class="eyebrow"><span class="tag tag-solid">MG</span> Français pour tous.</div>
         <h1>Prêt à progresser en français ?</h1>
         <p>Comprends, pratique, écoute et ose parler — niveau {safe_html(level)}.</p>
         <div style="margin-top:.5rem">{status}</div>
