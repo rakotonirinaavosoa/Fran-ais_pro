@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 FRANTSAY — Plateforme d'apprentissage du français pour les élèves et étudiants à Madagascar.
-Design : Light Mode "Nixtio"
+Design : Light Mode "Vercel / Kowalski Style"
 """
 
 import io
@@ -16,6 +16,7 @@ from audio_recorder_streamlit import audio_recorder
 from gtts import gTTS
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 
 # =============================================================================
@@ -35,23 +36,22 @@ st.set_page_config(
 
 
 # =============================================================================
-# 2. DESIGN — LIGHT MODE "NIXTIO"
+# 2. DESIGN — VERCEL / KOWALSKI STYLE (CSS)
 # =============================================================================
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --bg: #FFFBF7;
+    --bg: #FAFAFA;
     --card: #FFFFFF;
-    --ink: #29223A;
-    --muted: #7B728A;
-    --line: #EEE8E2;
-    --purple: #6366F1;
-    --orange: #F59E0B;
+    --ink: #0F172A;
+    --muted: #64748B;
+    --line: #E2E8F0;
+    --purple: #4F46E5;
     --green: #10B981;
-    --radius: 28px;
+    --radius: 20px;
 }
 
 html, body, [class*="css"] {
@@ -59,10 +59,7 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background:
-        radial-gradient(circle at 5% 0%, rgba(99,102,241,.10), transparent 28%),
-        radial-gradient(circle at 100% 12%, rgba(245,158,11,.09), transparent 25%),
-        var(--bg);
+    background: var(--bg);
     color: var(--ink);
 }
 
@@ -71,47 +68,41 @@ h1, h2, h3, h4, h5, p, span, label, div {
 }
 
 .block-container {
-    max-width: 1380px;
-    padding-top: 1.6rem;
+    max-width: 1200px;
+    padding-top: 1.5rem;
     padding-bottom: 3rem;
 }
 
-.hero {
-    background: var(--card);
-    border: 1px solid var(--line);
+/* Cartes style Kowalski (Flou + Ombres douces) */
+.hero, .card, .lesson, .tip, .stat {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
     border-radius: var(--radius);
-    padding: 2.1rem 2.5rem;
-    box-shadow: 0 14px 40px rgba(41,34,58,.07);
-    margin-bottom: 1.35rem;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover, .lesson:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07);
+}
+
+.hero {
+    padding: 2rem 2.2rem;
+    margin-bottom: 1.25rem;
 }
 
 .hero h1 {
-    font-size: clamp(1.9rem, 3vw, 2.75rem);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
     font-weight: 800;
-    letter-spacing: -1.2px;
+    letter-spacing: -1px;
     margin: 0;
 }
 
-.hero p {
-    color: var(--muted);
-    margin: .5rem 0 0;
-    font-size: 1rem;
-}
-
-.card, .lesson, .tip, .stat {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: 0 10px 30px rgba(41,34,58,.055);
-}
-
 .card {
-    padding: 1.55rem 1.7rem;
-    margin-bottom: 1.05rem;
-}
-
-.card h3, .card h4 {
-    margin-top: 0;
+    padding: 1.5rem 1.6rem;
+    margin-bottom: 1rem;
 }
 
 .eyebrow {
@@ -153,12 +144,11 @@ h1, h2, h3, h4, h5, p, span, label, div {
 }
 
 .stat {
-    min-height: 108px;
-    padding: 1.15rem 1.3rem;
+    padding: 1.1rem 1.2rem;
 }
 
 .stat-number {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
     font-weight: 800;
 }
 
@@ -175,21 +165,21 @@ h1, h2, h3, h4, h5, p, span, label, div {
 .tip {
     background: #F5F3FF;
     border-color: #DDD6FE;
-    padding: 1.05rem 1.15rem;
+    padding: 1rem 1.1rem;
 }
 
 .capsule {
     display: inline-flex;
     flex-direction: column;
-    border-radius: 18px;
-    padding: .65rem .95rem;
-    margin: .25rem .4rem .25rem 0;
+    border-radius: 14px;
+    padding: .55rem .85rem;
+    margin: .25rem .35rem .25rem 0;
     border: 1px solid;
-    min-width: 125px;
+    min-width: 110px;
 }
 
 .capsule-type {
-    font-size: .62rem;
+    font-size: .6rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: .5px;
@@ -224,20 +214,25 @@ h1, h2, h3, h4, h5, p, span, label, div {
     color: #475569;
 }
 
+/* Boutons avec feedback haptique visuel (scale sur tap) */
 div.stButton > button {
-    border: 0;
-    border-radius: 18px;
-    padding: .72rem 1.25rem;
-    font-weight: 700;
-    background: var(--purple);
+    border: 0 !important;
+    border-radius: 14px !important;
+    padding: .75rem 1.4rem !important;
+    font-weight: 700 !important;
+    background: var(--purple) !important;
     color: white !important;
-    box-shadow: 0 8px 20px rgba(99,102,241,.22);
-    transition: transform .15s ease, box-shadow .15s ease;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
+    transition: transform .15s ease, box-shadow .15s ease !important;
 }
 
 div.stButton > button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 26px rgba(99,102,241,.30);
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4) !important;
+}
+
+div.stButton > button:active {
+    transform: scale(0.98);
 }
 
 .stTextInput input, .stTextArea textarea,
@@ -245,22 +240,21 @@ div.stButton > button:hover {
     background: #FFFFFF !important;
     color: var(--ink) !important;
     border: 1px solid var(--line) !important;
-    border-radius: 18px !important;
+    border-radius: 14px !important;
 }
 
 .stTabs [data-baseweb="tab-list"] {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: .45rem;
-    background: #F3EEE9;
+    background: #F1F5F9;
     padding: .4rem;
-    border-radius: 22px;
-    border: 1px solid var(--line);
+    border-radius: 18px;
 }
 
 .stTabs [data-baseweb="tab"] {
     justify-content: center;
-    border-radius: 17px;
+    border-radius: 14px;
     padding: .65rem .8rem;
     font-weight: 700;
     color: var(--muted);
@@ -272,20 +266,13 @@ div.stButton > button:hover {
 }
 
 section[data-testid="stSidebar"] {
-    background: #FFFDFC;
-    border-right: 1px solid var(--line);
-}
-
-section[data-testid="stSidebar"] .stMetric {
     background: #FFFFFF;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    padding: .6rem .8rem;
+    border-right: 1px solid var(--line);
 }
 
 .footer {
     text-align: center;
-    color: #9B92A6;
+    color: #94A3B8;
     padding: 2rem 0 1rem;
     font-size: .82rem;
 }
@@ -298,10 +285,42 @@ section[data-testid="stSidebar"] .stMetric {
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
+# =============================================================================
+# 3. SCHÉMAS STRUCTURÉS PYDANTIC (SÉCURITÉ D'ANALYSE GEMINI)
+# =============================================================================
+
+class ErreurDetail(BaseModel):
+    erreur: str = Field(description="Erreur dans la phrase")
+    correction: str = Field(description="Correction proposée")
+    raison: str = Field(description="Règle ou raison")
+
+class PartDecomposition(BaseModel):
+    type: str = Field(description="Sujet, Verbe ou Complément")
+    texte: str = Field(description="Texte correspondant")
+
+class ReponseCorrection(BaseModel):
+    phrase_corrigee: str
+    decomposition: list[PartDecomposition]
+    erreurs: list[ErreurDetail]
+    explication: str
+    conseil_prononciation: str
+    mini_exercice: str
+
+class ReponseQuiz(BaseModel):
+    question: str
+    options: list[str]
+    bonne_reponse: int
+    explication: str
+
+class ReponsePrononciation(BaseModel):
+    score: int
+    points_forts: list[str]
+    points_a_ameliorer: list[str]
+    conseil: str
 
 
 # =============================================================================
-# 3. DONNÉES PÉDAGOGIQUES
+# 4. DONNÉES PÉDAGOGIQUES
 # =============================================================================
 
 PRONUNCIATION = [
@@ -360,7 +379,7 @@ LESSONS = [
 
 
 # =============================================================================
-# 4. ÉTAT
+# 5. ÉTAT DE SESSION
 # =============================================================================
 
 DEFAULT_STATE = {
@@ -383,7 +402,7 @@ for key, value in DEFAULT_STATE.items():
 
 
 # =============================================================================
-# 5. GEMINI / OUTILS
+# 6. APPELS API GEMINI STRUCTURÉS
 # =============================================================================
 
 def get_api_key() -> str:
@@ -398,7 +417,8 @@ def api_available() -> bool:
     return bool(get_api_key())
 
 
-def call_gemini(system_prompt: str, user_prompt: str) -> str:
+def call_gemini_structured(system_prompt: str, user_prompt: str, schema_class):
+    """Appel avec schéma Pydantic strict pour éliminer les erreurs JSON."""
     key = get_api_key()
     if not key:
         raise ValueError("Clé API Gemini manquante.")
@@ -407,28 +427,28 @@ def call_gemini(system_prompt: str, user_prompt: str) -> str:
     response = client.models.generate_content(
         model=MODEL_NAME,
         contents=user_prompt,
-        config={
-            "system_instruction": system_prompt,
-            "temperature": 0.35,
-        },
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            temperature=0.2,
+            response_mime_type="application/json",
+            response_schema=schema_class,
+        ),
     )
-    text = getattr(response, "text", None)
-    if not text:
-        raise RuntimeError("Gemini n'a renvoyé aucun contenu.")
-    return text.strip()
+    return json.loads(response.text)
 
 
-def extract_json(text: str) -> Dict[str, Any]:
-    cleaned = text.strip()
-    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.I)
-    cleaned = re.sub(r"\s*```$", "", cleaned)
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", cleaned, re.S)
-        if not match:
-            raise ValueError("La réponse de l'IA n'est pas un JSON valide.")
-        return json.loads(match.group(0))
+def call_gemini_text(system_prompt: str, user_prompt: str) -> str:
+    key = get_api_key()
+    if not key:
+        raise ValueError("Clé API Gemini manquante.")
+
+    client = genai.Client(api_key=key)
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=user_prompt,
+        config={"system_instruction": system_prompt, "temperature": 0.35},
+    )
+    return getattr(response, "text", "").strip()
 
 
 def make_audio(text: str, slow: bool = False) -> io.BytesIO:
@@ -448,8 +468,8 @@ def show_api_notice():
         "La partie cours, prononciation et quiz reste utilisable sans clé.</div>",
         unsafe_allow_html=True,
     )
-# =============================================================================
-# 6. PROMPTS
+    # =============================================================================
+# 7. PROMPTS SYSTÈME
 # =============================================================================
 
 CORRECTION_PROMPT = """
@@ -457,22 +477,6 @@ Tu es un professeur de français spécialisé dans l'enseignement aux apprenants
 Tu dois corriger sans humilier. Explique simplement l'erreur et donne une règle mémorisable.
 Prends en compte les difficultés possibles : ordre des mots influencé par le malagasy,
 genre des noms, articles, conjugaison, prépositions, accords et prononciation.
-
-Réponds UNIQUEMENT avec un JSON valide :
-{
-  "phrase_corrigee": "...",
-  "decomposition": [
-    {"type": "Sujet", "texte": "..."},
-    {"type": "Verbe", "texte": "..."},
-    {"type": "Complément", "texte": "..."}
-  ],
-  "erreurs": [
-    {"erreur": "...", "correction": "...", "raison": "..."}
-  ],
-  "explication": "...",
-  "conseil_prononciation": "...",
-  "mini_exercice": "..."
-}
 """
 
 DIALOGUE_PROMPT = """
@@ -486,32 +490,13 @@ Structure en Markdown avec exactement :
 ## Défi
 """
 
-QUIZ_PROMPT = """
-Crée une seule question de français adaptée au niveau indiqué.
-Réponds uniquement en JSON :
-{
-  "question": "...",
-  "options": ["...", "...", "...", "..."],
-  "bonne_reponse": 0,
-  "explication": "..."
-}
-"""
+QUIZ_PROMPT = "Crée une seule question de français adaptée au niveau indiqué."
 
-PRONUNCIATION_PROMPT = """
-Évalue la prononciation française de l'apprenant à partir de l'audio fourni.
-Réponds UNIQUEMENT avec un JSON valide :
-{
-  "score": 0,
-  "points_forts": ["..."],
-  "points_a_ameliorer": ["..."],
-  "conseil": "..."
-}
-Le score est un nombre de 0 à 100.
-"""
+PRONUNCIATION_PROMPT = "Évalue la prononciation française de l'apprenant à partir de l'audio fourni. Le score est de 0 à 100."
 
 
 # =============================================================================
-# 7. SIDEBAR
+# 8. BARRE LATÉRALE (SIDEBAR)
 # =============================================================================
 
 with st.sidebar:
@@ -535,7 +520,7 @@ with st.sidebar:
         type="password",
         value=st.session_state.api_key,
         placeholder="AIza...",
-        help="Tu peux aussi définir GEMINI_API_KEY dans les secrets Streamlit. L'app reste utilisable sans clé.",
+        help="Définis GEMINI_API_KEY dans les secrets Streamlit.",
     )
     st.session_state.api_key = manual_key
 
@@ -556,11 +541,9 @@ with st.sidebar:
     st.metric("Points", st.session_state.score)
     st.metric("Activités", st.session_state.questions_done)
 
-    st.caption("Conseil : pratique 10 à 15 minutes chaque jour plutôt que tout apprendre en une fois.")
-
 
 # =============================================================================
-# 8. HEADER
+# 9. EN-TÊTE & STATISTIQUES
 # =============================================================================
 
 status = (
@@ -585,11 +568,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# =============================================================================
-# 9. STATS
-# =============================================================================
-
 c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.markdown('<div class="stat"><div class="stat-number">🎯</div><div class="stat-label">Objectif : communiquer</div></div>', unsafe_allow_html=True)
@@ -601,10 +579,8 @@ with c4:
     st.markdown('<div class="stat"><div class="stat-number">🇫🇷</div><div class="stat-label">Français pratique</div></div>', unsafe_allow_html=True)
 
 st.write("")
-
-
 # =============================================================================
-# 10. ONGLETS
+# 10. ONGLETS ET MODULES
 # =============================================================================
 
 tab_home, tab_correction, tab_pron, tab_missions, tab_quiz = st.tabs(
@@ -612,17 +588,11 @@ tab_home, tab_correction, tab_pron, tab_missions, tab_quiz = st.tabs(
 )
 
 
-# =============================================================================
-# PARCOURS
-# =============================================================================
-
+# --- ONGLET 1 : PARCOURS ---
 with tab_home:
     st.markdown('<div class="card"><span class="eyebrow">Parcours recommandé</span><h3>Apprendre sans se perdre</h3><p>Commence par une petite leçon, écoute les exemples, puis utilise l\'IA pour pratiquer.</p></div>', unsafe_allow_html=True)
 
-    relevant = [
-        x for x in LESSONS
-        if x["niveau"] == "Tous" or x["niveau"] == level
-    ]
+    relevant = [x for x in LESSONS if x["niveau"] == "Tous" or x["niveau"] == level]
 
     cols = st.columns(2)
     for i, lesson in enumerate(relevant):
@@ -638,19 +608,10 @@ with tab_home:
                 unsafe_allow_html=True,
             )
 
-    st.markdown(
-        '<div class="tip"><b>💡 Méthode :</b> lis → écoute → répète → écris → parle. '
-        "L'objectif n'est pas d'être parfait dès le début, mais de progresser régulièrement.</div>",
-        unsafe_allow_html=True,
-    )
 
-
-# =============================================================================
-# MODULE 1 — STRUCTURE & CORRECTION
-# =============================================================================
-
+# --- ONGLET 2 : CORRECTION GRAMMATICALE ---
 with tab_correction:
-    st.markdown('<div class="card"><span class="eyebrow">Module 01 · Grammaire</span><h3>Corrige ma phrase</h3><p>Écris une phrase comme tu la dirais naturellement. L\'IA explique ensuite les erreurs et décompose la structure au lieu de donner seulement la réponse.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><span class="eyebrow">Module 01 · Grammaire</span><h3>Corrige ma phrase</h3><p>Écris une phrase comme tu la dirais naturellement. L\'IA explique ensuite les erreurs et décompose la structure.</p></div>', unsafe_allow_html=True)
 
     text = st.text_area(
         "Phrase",
@@ -669,30 +630,26 @@ with tab_correction:
             show_api_notice()
         else:
             try:
-                with st.spinner("Je cherche les erreurs et les explique..."):
-                    raw = call_gemini(
+                with st.spinner("Analyse structurée en cours..."):
+                    result = call_gemini_structured(
                         CORRECTION_PROMPT,
                         f"Niveau : {level}\nPhrase de l'apprenant : {text}",
+                        ReponseCorrection
                     )
-                    result = extract_json(raw)
 
                 st.session_state.last_correction = result
                 st.session_state.questions_done += 1
                 st.session_state.score += 5
 
             except Exception as exc:
-                st.error(f"Impossible d'effectuer l'analyse : {exc}")
+                st.error(f"Erreur d'analyse : {exc}")
 
     result = st.session_state.last_correction
     if result:
         st.markdown('<div class="card"><span class="eyebrow">Résultat</span><h3>✅ Phrase corrigée</h3><h4>' + safe_html(result.get("phrase_corrigee", "")) + '</h4></div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card"><h4>🔎 Décomposition</h4>', unsafe_allow_html=True)
-        mapping = {
-            "Sujet": "sujet",
-            "Verbe": "verbe",
-            "Complément": "complement",
-        }
+        mapping = {"Sujet": "sujet", "Verbe": "verbe", "Complément": "complement"}
         parts = result.get("decomposition", [])
         if parts:
             html_parts = ""
@@ -706,11 +663,9 @@ with tab_correction:
                     "</div>"
                 )
             st.markdown(html_parts, unsafe_allow_html=True)
-        else:
-            st.info("La décomposition n'a pas été fournie.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="card"><h4>🧩 Ce qu\'il faut comprendre</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4>🧩 Explication</h4>', unsafe_allow_html=True)
         st.write(result.get("explication", ""))
 
         errors = result.get("erreurs", [])
@@ -727,15 +682,12 @@ with tab_correction:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-# =============================================================================
-# MODULE 2 — ATELIER PRONONCIATION
-# =============================================================================
-
+# --- ONGLET 3 : PRONONCIATION ---
 with tab_pron:
     st.markdown(
         '<div class="card"><span class="eyebrow">🎙️ Analyse vocale</span>'
         '<h3>Enregistre ta prononciation</h3>'
-        '<p>Enregistre quelques mots ou une phrase en français, puis demande une analyse par Gemini.</p>'
+        '<p>Enregistre quelques mots ou une phrase en français.</p>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -756,42 +708,37 @@ with tab_pron:
             show_api_notice()
         elif st.button("✨ Analyser ma prononciation", key="analyze_pronunciation"):
             try:
-                with st.spinner("Analyse de ta prononciation..."):
+                with st.spinner("Analyse de la prononciation..."):
                     client = genai.Client(api_key=get_api_key())
-                    
                     response = client.models.generate_content(
                         model=MODEL_NAME,
                         contents=[
                             types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
                             "Analyse cet enregistrement de prononciation française."
                         ],
-                        config={
-                            "system_instruction": PRONUNCIATION_PROMPT,
-                            "temperature": 0.2,
-                            "response_mime_type": "application/json",
-                        },
+                        config=types.GenerateContentConfig(
+                            system_instruction=PRONUNCIATION_PROMPT,
+                            temperature=0.2,
+                            response_mime_type="application/json",
+                            response_schema=ReponsePrononciation,
+                        ),
                     )
-                    pronunciation_result = extract_json(response.text or "")
+                    pronunciation_result = json.loads(response.text)
                     st.session_state.questions_done += 1
-                    st.session_state.score += max(
-                        0, int(pronunciation_result.get("score", 0)) // 10
-                    )
+                    st.session_state.score += max(0, int(pronunciation_result.get("score", 0)) // 10)
 
                 st.markdown('<div class="card"><h4>🎯 Retour sur ta prononciation</h4>', unsafe_allow_html=True)
                 st.metric("Score", f"{pronunciation_result.get('score', 0)}/100")
-                st.markdown("**Points forts**")
                 for point in pronunciation_result.get("points_forts", []):
-                    st.markdown(f"- {point}")
-                st.markdown("**Points à améliorer**")
+                    st.markdown(f"- ✅ {point}")
                 for point in pronunciation_result.get("points_a_ameliorer", []):
-                    st.markdown(f"- {point}")
+                    st.markdown(f"- ⚠️ {point}")
                 st.markdown(f"**💡 Conseil :** {pronunciation_result.get('conseil', '')}")
                 st.markdown("</div>", unsafe_allow_html=True)
             except Exception as exc:
-                st.error(f"Impossible d'analyser l'enregistrement : {exc}")
+                st.error(f"Erreur lors de l'analyse vocale : {exc}")
 
-    st.markdown('<div class="card"><span class="eyebrow">Module 02 · Phonétique</span><h3>Atelier Prononciation</h3><p>Écoute lentement, répète plusieurs fois, puis essaie sans regarder le texte.</p></div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="card"><span class="eyebrow">Module 02 · Phonétique</span><h3>Atelier Prononciation</h3></div>', unsafe_allow_html=True)
     for idx, item in enumerate(PRONUNCIATION):
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown(f"### {item['titre']}")
@@ -808,23 +755,15 @@ with tab_pron:
                     except Exception as exc:
                         st.error(f"Audio indisponible : {exc}")
         st.markdown("</div>", unsafe_allow_html=True)
-
-
-# =============================================================================
-# MODULE 3 — MISSIONS DU QUOTIDIEN
-# =============================================================================
-
+    # --- ONGLET 4 : MISSIONS ---
 with tab_missions:
-    st.markdown('<div class="card"><span class="eyebrow">Module 03 · Communication</span><h3>Parler dans la vraie vie</h3><p>Les situations sont inspirées de la vie quotidienne d\'un élève ou étudiant à Madagascar.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><span class="eyebrow">Module 03 · Communication</span><h3>Parler dans la vraie vie</h3></div>', unsafe_allow_html=True)
 
     mission_names = [x[0] for x in MISSIONS]
     selected_name = st.selectbox("Mission", mission_names)
     selected_desc = dict(MISSIONS)[selected_name]
 
-    st.markdown(
-        f'<div class="tip"><b>Situation :</b> {safe_html(selected_desc)}</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="tip"><b>Situation :</b> {safe_html(selected_desc)}</div>', unsafe_allow_html=True)
 
     if not api_available():
         show_api_notice()
@@ -834,8 +773,8 @@ with tab_missions:
             show_api_notice()
         else:
             try:
-                with st.spinner("Création d'une situation réaliste..."):
-                    dialogue = call_gemini(
+                with st.spinner("Création de la situation..."):
+                    dialogue = call_gemini_text(
                         DIALOGUE_PROMPT,
                         f"Niveau : {level}\nMission : {selected_name}\nObjectif : {selected_desc}",
                     )
@@ -843,7 +782,7 @@ with tab_missions:
                 st.session_state.questions_done += 1
                 st.session_state.score += 10
             except Exception as exc:
-                st.error(f"Impossible de générer le dialogue : {exc}")
+                st.error(f"Erreur : {exc}")
 
     if st.session_state.last_dialogue:
         st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -851,52 +790,33 @@ with tab_missions:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-# =============================================================================
-# QUIZ
-# =============================================================================
-
+# --- ONGLET 5 : QUIZ ---
 with tab_quiz:
-    st.markdown('<div class="card"><span class="eyebrow">Module 04 · Révision</span><h3>Quiz intelligent</h3><p>Une question à la fois. Après ta réponse, tu reçois une explication.</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><span class="eyebrow">Module 04 · Révision</span><h3>Quiz intelligent</h3></div>', unsafe_allow_html=True)
 
     if st.session_state.quiz_question is None:
         if api_available():
             if st.button("🧠 Générer une question", key="new_quiz"):
                 try:
-                    with st.spinner("Préparation de la question..."):
-                        raw = call_gemini(
+                    with st.spinner("Préparation..."):
+                        q_data = call_gemini_structured(
                             QUIZ_PROMPT,
-                            f"Niveau : {level}. Crée une question sur grammaire, vocabulaire ou conjugaison.",
+                            f"Niveau : {level}. Question sur grammaire, vocabulaire ou conjugaison.",
+                            ReponseQuiz
                         )
-                        st.session_state.quiz_question = extract_json(raw)
+                        st.session_state.quiz_question = q_data
                         st.session_state.quiz_feedback = ""
                         st.rerun()
                 except Exception as exc:
                     st.error(f"Erreur du quiz : {exc}")
         else:
             show_api_notice()
-            st.markdown(
-                """
-                <div class="lesson">
-                <b>Question rapide</b><br><br>
-                Complète : « Nous ___ au marché demain. »
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Voir la réponse", key="static_answer"):
-                st.success("Réponse : « irons ». Le sujet « nous » appelle la forme « irons » du verbe aller au futur.")
-                st.session_state.score += 5
     else:
         q = st.session_state.quiz_question
         st.markdown(f"### {q.get('question', '')}")
         options = q.get("options", [])
 
-        answer = st.radio(
-            "Choisis une réponse",
-            options,
-            index=None,
-            key="quiz_answer",
-        )
+        answer = st.radio("Choisis une réponse", options, index=None, key="quiz_answer")
 
         if st.button("Valider", key="validate_quiz"):
             if answer is None:
@@ -911,8 +831,6 @@ with tab_quiz:
                     st.error(f"Pas tout à fait. La bonne réponse était : {correct}")
                 st.info(q.get("explication", ""))
                 st.session_state.questions_done += 1
-                st.session_state.quiz_question = None
-        
 
         if st.button("Nouvelle question", key="reset_quiz"):
             st.session_state.quiz_question = None
@@ -921,12 +839,12 @@ with tab_quiz:
 
 
 # =============================================================================
-# FOOTER
+# 11. FOOTER
 # =============================================================================
 
 st.markdown(
     '<div class="footer">FRANTSAY 🇲🇬 · Apprendre le français avec confiance · '
     "Conçu par RAKOTONIRINA Avosoa</div>",
     unsafe_allow_html=True,
-            )
-                     
+    )
+                    
