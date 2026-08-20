@@ -29,7 +29,13 @@ from supabase.lib.client_options import ClientOptions
 from streamlit_cookies_controller import CookieController
 from cryptography.fernet import Fernet, InvalidToken
 
-
+# DEBUG - à retirer après correction
+st.write("DEBUG Secrets:")
+for key in ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", 
+            "GEMINI_API_KEY", "SESSION_ENCRYPTION_KEY"]:
+    val = st.secrets.get(key, "MANQUANT")
+    st.write(f"{key}: {'OK (' + str(val)[:20] + '...)' if val != 'MANQUANT' else 'MANQUANT'}")
+                
 # =============================================================================
 # 1. CONFIGURATION
 # =============================================================================
