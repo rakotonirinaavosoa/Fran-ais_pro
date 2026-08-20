@@ -1,0 +1,7 @@
+streamlit
+supabase
+google-genai
+pydantic
+gTTS
+cryptography
+streamlit-cookies-controller
