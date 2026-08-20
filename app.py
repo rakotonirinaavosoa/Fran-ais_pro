@@ -32,7 +32,7 @@ from cryptography.fernet import Fernet, InvalidToken
 # =============================================================================
 
 APP_NAME = "FRANTSAY"
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 SESSION_COOKIE_NAME = "frantsay_sid"
 SESSION_MAX_AGE = 60 * 60 * 24 * 30
 LEVELS = ["Collège", "Lycée", "Université"]
