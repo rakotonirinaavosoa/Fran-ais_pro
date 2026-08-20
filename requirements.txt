@@ -1,5 +1,0 @@
-streamlit>=1.38
-audio-recorder-streamlit>=0.0.10
-gTTS>=2.5
-google-genai>=0.3
-pydantic>=2.6
