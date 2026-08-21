@@ -3,8 +3,6 @@
 FRANTSAY V3 — "L'AME DE MADAGASCAR"
 Plateforme d'apprentissage du francais pour eleves et etudiants a Madagascar.
 Stack: Streamlit + Supabase Auth (Email/MDP) + Gemini + gTTS
-Design: Identite culturelle malgache subtile (Baobabs, Lemuriens, Aloalo)
-Palette: Sable #FBF8F3, Terre rouge #B83A24, Ravinala #1B4D3E, Or Lamba #E69A2A
 """
 
 import base64
