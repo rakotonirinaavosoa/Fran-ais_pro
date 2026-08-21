@@ -1,0 +1,17 @@
+# FRANTSAY V3 — Requirements
+# Python 3.11+
+
+streamlit>=1.40.0
+streamlit-cookies-controller>=0.0.4
+
+# IMPORTANT : version epinglee volontairement.
+# La 2.24.0 contient une regression connue qui casse create_client()
+# des qu'on lui passe des ClientOptions (AttributeError: 'ClientOptions'
+# object has no attribute 'storage'). Corrige en 2.23.0, cassee en 2.24.0.
+# Ref: github.com/supabase/supabase-py/issues/1306
+supabase==2.23.0
+
+google-genai>=1.0.0
+gTTS>=2.5.0
+pydantic>=2.10.0
+cryptography>=44.0.0
