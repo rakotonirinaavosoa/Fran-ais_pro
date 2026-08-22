@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-FRANTSAY V4 — "L'AME DE MADAGASCAR" (Refactored)
+FRANTSAY  — "L'AME DE MADAGASCAR" 
 Plateforme d'apprentissage du francais pour eleves et etudiants a Madagascar.
 Stack: Streamlit + Supabase Auth (Email/MDP) + Gemini + gTTS
 
-Refactoring complet incluant :
-- UI/UX restructuree avec navigation "Ton Espace"
-- Correction 5 bugs critiques (session, reactivite, audio, contraste, performance)
-- Design immersif avec fond photographique Baobabs + overlay sombre
-- Gestion session via st.query_params + CookieManager
-- Audio recorder via streamlit-mic-recorder
-- Caching Gemini API calls
-- gTTS en memoire (BytesIO) sans fichiers temporaires
 """
 
 import base64
